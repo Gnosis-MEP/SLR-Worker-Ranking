@@ -6,6 +6,22 @@ class FuzzyTOPSIS(object):
     Parameters
     ----------
 
+    Example of input:
+    decision_maker_1_decision_matrix = [
+        [(9, 10, 10), (9, 10, 10), (9, 10, 10)] # alt1: crit1, 2 and 3 as "very_good_rating",
+        [(3, 5, 7), (3, 5, 7), (3, 5, 7)] # alt2: crit1, 2 and 3 as "medium_rating",
+    ]
+    decision_maker_1_weights = [(0.7, 0.9, 1.0), (0.3, 0.5, 0.7), (0.3, 0.5, 0.7)] # weights for crit1, 2 and 3 as "high_weight", "medium_weight" the last two
+
+    decision_maker_2_decision_matrix = [
+        [(3, 5, 7), (3, 5, 7), (3, 5, 7)] # alt1: crit1, 2 and 3 as "medium_rating",
+        [(7, 9, 10), (7, 9, 10), (7, 9, 10)] # alt2: crit1, 2 and 3 as "good_rating",
+    ]
+    decision_maker_2_weights = [(0.3, 0.5, 0.7), (0.5, 0.7, 0.9), (0.5, 0.7, 0.9)] # weights for crit1, 2 and 3 as "medium_weight", "medium_high_weight" the last two
+
+    decision_matrix_list = [decision_maker_1_decision_matrix, decision_maker_2_decision_matrix]
+    weights_list = [decision_maker_1_weights, decision_maker_2_weights]
+    criteria_benefit_indicator = [True, False, True] # indicating that crit1 and 3 are benefit, and crit 2 is cost.
     """
 
 
@@ -26,7 +42,7 @@ class FuzzyTOPSIS(object):
     def validate_inputs(self, alt, k_benefit_crit, k_cost_crit):
         assert len(k_benefit_crit) == len(k_cost_crit), "Inconsistent decision makers criteria vectors lenght."
         assert len(k_benefit_crit) == len(alt), "Inconsistent decision makers alternatives vectors lenght."
-    
+
     def evaluate(self):
         # self._assign_ratings_and_weights()
         self._aggregated_ratings_and_weights()
@@ -103,17 +119,64 @@ class FuzzyTOPSIS(object):
 
     def _aggregated_ratings_and_weights(self):
         """
-        Second step in fuzzy TOPSIS, where the aggregated fuzzy ratings and weights are calculated 
+        Second step in fuzzy TOPSIS, where the aggregated fuzzy ratings and weights are calculated
         for the criteria and alternatives, respectivelly.
         """
         self.agg_alternatives = self._all_agg_ratings()
         self.agg_benefit_criteria, self.agg_cost_criteria = self._all_agg_weights()
 
 
+    # def _calculate_norm_alt_ratings_benefit_criteria(self):
+    #     def _get_tri_fuzz_right_value(fuzz_val):
+    #         return fuzz_val[2]
+    #     def _get_tri_fuzz_left_value(fuzz_val):
+    #         return fuzz_val[0]
+    #     norm_ratings_benefit_crit = []
+
+
+
+    #     max_right_value = max(
+    #         [self.agg_alternatives[i][crit_index] for i in range(len(self.agg_alternatives))],
+    #         key=_get_tri_fuzz_right_value
+    #     )[2]
+    #     norm_alt_ratings = []
+    #     for i in range(len(self.alternatives)):
+    #         norm_alt_i_ratings = []
+    #         i_alt_criterias = self.alternatives[i]
+
+    #         for j in range(len(i_alt_criterias)):
+    #             i_j_crit_alt = i_alt_criterias[j]
+
+
+    #     for i in range(len(self.agg_alternatives)):
+
+    #         for j in range(len(self.benefit_criteria)):
+    #         crit_index = j
+    #         # max_right_value = self.agg_alternatives[0][crit_index]
+    #         max_right_value = max(
+    #             [self.agg_alternatives[i][crit_index] for i in range(len(self.agg_alternatives))],
+    #             key=_get_tri_fuzz_right_value
+    #         )[2]
+    #         benefit_crit_max = (max_right_value, max_right_value, max_right_value)
+    #             agg_alt_i_j_rating = self.agg_alternatives[i][crit_index]
+    #             norm_rating = []
+    #             for v in range(3):
+    #                 norm_rating.append(self.agg_alternatives[i][crit_index][v] / benefit_crit_max[v])
+    #             norm_ratings_benefit_crit.append(norm_rating)
+
+
+    #         # min_left_value = min(
+    #         #     [self.agg_alternatives[i][crit_index] for i in range(len(self.agg_alternatives))],
+    #         #     key=_get_tri_fuzz_left_value
+    #         # )[2]
+
+
     def _normalized_decision_matrix(self):
         """
         Third step in fuzzy TOPSIS, in which the normalized fuzzy decision matrix is calculated.
         """
+
+
 
     def _weighted_normalized_decision_matrix(self):
         """
@@ -122,14 +185,14 @@ class FuzzyTOPSIS(object):
 
     def _calculate_FPIS_FNIS(self):
         """
-        Fifith step in fuzzy TOPSIS, in which the 
+        Fifith step in fuzzy TOPSIS, in which the
         Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
         """
 
 
     def _distance_from_FPIS_FNIS(self):
         """
-        Sixth step in fuzzy TOPSIS, where the distances from each alternative to the 
+        Sixth step in fuzzy TOPSIS, where the distances from each alternative to the
         Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
         """
 
@@ -140,6 +203,6 @@ class FuzzyTOPSIS(object):
 
     def _rank_alternatives(self):
         """
-        Eight and last step in fuzzy TOPSIS, in which final alternative ranks are calculated as crips values. 
+        Eight and last step in fuzzy TOPSIS, in which final alternative ranks are calculated as crips values.
         """
 
