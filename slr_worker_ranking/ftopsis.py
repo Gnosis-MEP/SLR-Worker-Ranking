@@ -40,6 +40,8 @@ class FuzzyTOPSIS(object):
 
         self.agg_decision_matrix = None
         self.agg_criteria_weights = None
+        self.norm_decision_matrix = None
+        self.weighted_norm_decision_matrix = None
 
         # self.validate_inputs(alt, k_benefit_crit, k_cost_crit)
 
@@ -185,26 +187,33 @@ class FuzzyTOPSIS(object):
             norm_alt_crit_j = ((minl_or_maxr_criteria / right_value), (minl_or_maxr_criteria / middle_value), (minl_or_maxr_criteria / left_value))
         return norm_alt_crit_j
 
-
     def _normalized_decision_matrix(self):
         """
         Third step in fuzzy TOPSIS, in which the normalized fuzzy decision matrix is calculated.
         """
 
-        norm_decision_matrix = [[None for j in range(self.num_criteria)] for i in range(self.num_alternatives)]
+        self.norm_decision_matrix = [[None for j in range(self.num_criteria)] for i in range(self.num_alternatives)]
         for crit_j in range(self.num_criteria):
             minl_or_maxr_criteria = self._get_min_left_or_max_right_for_criteria(crit_j)
 
             for alt_i in range(self.num_alternatives):
                 norm_alt_crit_j = self.norm_alt_fuzzy_method(alt_i, crit_j, minl_or_maxr_criteria)
-                norm_decision_matrix[alt_i][crit_j] = norm_alt_crit_j
-
-        return norm_decision_matrix
+                self.norm_decision_matrix[alt_i][crit_j] = norm_alt_crit_j
 
     def _weighted_normalized_decision_matrix(self):
         """
         Fourth step in fuzzy TOPSIS, in which the weighted normalized fuzzy decision matrix is calculated.
         """
+        self.weighted_norm_decision_matrix = []
+        for alternative in self.norm_decision_matrix:
+            alt_weighted_norm_criteria = []
+            for crit_j, criterion in enumerate(alternative):
+                weight_norm_criterion = []
+                weight = self.agg_criteria_weights[crit_j]
+                for i in range(3):
+                    weight_norm_criterion.append(criterion[i] * weight[i])
+                alt_weighted_norm_criteria.append(weight_norm_criterion)
+            self.weighted_norm_decision_matrix.append(alt_weighted_norm_criteria)
 
     def _calculate_FPIS_FNIS(self):
         """

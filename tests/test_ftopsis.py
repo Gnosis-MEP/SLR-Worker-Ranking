@@ -161,9 +161,29 @@ class TestFuzzyTOPSIS(TestCase):
             [(3, 7.5, 10), (3, 7, 10), (1, 4, 7)], # alt 1
             [(3, 7, 10), (1, 3, 5), (3, 7.5, 10)] # alt 2
         ]
-        norm_decision_matrix = self.ranker._normalized_decision_matrix()
+        self.ranker._normalized_decision_matrix()
         exp_norm_decision_matrix = [
             [(0.3, 0.75, 1.0), (1/10, 1/7, 1/3), (0.1, 0.4, 0.7)], # alt1
             [(0.3, 0.7, 1.0), (1/5, 1/3, 1.0), (0.3, 0.75, 1)], # alt2
         ]
-        self.assertEqual(norm_decision_matrix, exp_norm_decision_matrix)
+        self.assertEqual(self.ranker.norm_decision_matrix, exp_norm_decision_matrix)
+
+    def test_weighted_normalized_decision_matrix(self):
+        self.ranker.agg_criteria_weights = [(0.3, 0.7, 1.0), (0.3, 0.6, 0.9), (0.3, 0.6, 0.9)]
+        self.ranker.norm_decision_matrix = [
+            [(0.3, 0.75, 1.0), (0.1, 0.142, 1/3), (0.1, 0.4, 0.7)], # alt1
+            [(0.3, 0.7, 1.0), (1/5, 1/3, 1.0), (0.3, 0.75, 1)], # alt2
+        ]
+        self.ranker._weighted_normalized_decision_matrix()
+        exp_weighted_norm_decision_matrix = [
+            [(0.3 * 0.3, 0.75 * 0.7, 1.0 * 1.0), (0.03, 0.142 * 0.6, 1/3 * 0.9), (0.1 * 0.3, 0.4 * 0.6, 0.7 * 0.9)], # alt1
+            [(0.3 * 0.3, 0.7 * 0.7, 1.0 * 1.0), (1/5 * 0.3, 1/3 * 0.6, 1.0 * 0.9), (0.3 * 0.3, 0.75 * 0.6, 1.0 * 0.9)], # alt2
+        ]
+        for alt_i in range(self.ranker.num_alternatives):
+            for crit_j in range(self.ranker.num_criteria):
+                for triple_i in range(3):
+                    self.assertAlmostEqual(
+                        self.ranker.weighted_norm_decision_matrix[alt_i][crit_j][triple_i],
+                        exp_weighted_norm_decision_matrix[alt_i][crit_j][triple_i],
+                        places=3
+                    )
