@@ -1,3 +1,4 @@
+from os import closerange
 import numpy as np
 
 
@@ -42,8 +43,17 @@ class FuzzyTOPSIS(object):
         self.agg_criteria_weights = None
         self.norm_decision_matrix = None
         self.weighted_norm_decision_matrix = None
+
         self.FPIS_indexes = None
+        self.fpis_distances = None
+        self.fpis_distances_per_criterion = None
+
         self.FNIS_indexes = None
+        self.fnis_distances = None
+        self.fnis_distances_per_criterion = None
+
+        self.clonseness_coefficients = None
+        self.ranking_indexes = None
 
         # self.validate_inputs(alt, k_benefit_crit, k_cost_crit)
 
@@ -84,9 +94,9 @@ class FuzzyTOPSIS(object):
         self._weighted_normalized_decision_matrix()
         self._calculate_FPIS_FNIS()
         self._distance_from_FPIS_FNIS()
-        self._closeness_coefficient()
-        alternatives_ranking = self._rank_alternatives()
-        return alternatives_ranking
+        self._calculate_closeness_coefficients()
+        self._rank_alternatives()
+        return self.ranking_indexes
 
 
     def _defaut_alt_agg_fuzzy_rating_method(self, alt_i, crit_j):
@@ -254,19 +264,65 @@ class FuzzyTOPSIS(object):
             self.FNIS_indexes.append(fnis_alt_i)
 
 
+    def _fuzzy_number_distance_calculation(self, val1, val2):
+        first_part = 0
+        for vi in range(3):
+            first_part += (val1[vi] - val2[vi])**2
+        second_part = first_part / 3
+        third_part = np.sqrt(second_part)
+        return third_part
+
+    def _calculate_distance_from_ideal_solutions(self, alt_i, crit_j, is_positive=True):
+        ideal_solution_index = self.FPIS_indexes[crit_j]
+        if not is_positive:
+            ideal_solution_index = self.FNIS_indexes[crit_j]
+
+        criterion = self.weighted_norm_decision_matrix[alt_i][crit_j]
+        dist = 0
+        if alt_i != ideal_solution_index:
+            ideal_solution = self.weighted_norm_decision_matrix[ideal_solution_index][crit_j]
+            dist = self._fuzzy_number_distance_calculation(criterion, ideal_solution)
+        return dist
+
     def _distance_from_FPIS_FNIS(self):
         """
         Sixth step in fuzzy TOPSIS, where the distances from each alternative to the
         Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
         """
+        self.fpis_distances = []
+        self.fpis_distances_per_criterion = []
+        self.fnis_distances = []
+        self.fnis_distances_per_criterion = []
+        for alt_i, alternative in enumerate(self.weighted_norm_decision_matrix):
+            alt_fpis_distances = []
+            alt_fnis_distances = []
+            for crit_j, criterion in enumerate(alternative):
+                fpis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=True)
+                fnis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=False)
 
-    def _closeness_coefficient(self):
+                alt_fpis_distances.append(fpis_dist)
+                alt_fnis_distances.append(fnis_dist)
+
+            self.fpis_distances_per_criterion.append(alt_fpis_distances)
+            self.fpis_distances.append(sum(alt_fpis_distances))
+            self.fnis_distances_per_criterion.append(alt_fnis_distances)
+            self.fnis_distances.append(sum(alt_fnis_distances))
+
+    def _calculate_closeness_coefficients(self):
         """
         Seventh step in fuzzy TOPSIS, where it is calculated the closeness coefficient for each alternative.
         """
+        self.clonseness_coefficients = []
+        for alt_j in range(self.num_alternatives):
+            nominator = self.fnis_distances[alt_j]
+            denominator = self.fnis_distances[alt_j] + self.fpis_distances[alt_j]
+            close_coeff = nominator / denominator
+            self.clonseness_coefficients.append(close_coeff)
 
     def _rank_alternatives(self):
         """
         Eight and last step in fuzzy TOPSIS, in which final alternative ranks are calculated as crips values.
         """
+
+        self.ranking_indexes = sorted(range(self.num_alternatives), key=lambda k: self.clonseness_coefficients[k], reverse=True)
 

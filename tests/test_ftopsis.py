@@ -202,3 +202,104 @@ class TestFuzzyTOPSIS(TestCase):
 
         self.assertListEqual(self.ranker.FPIS_indexes, exp_FPIS_indexes)
         self.assertListEqual(self.ranker.FNIS_indexes, exp_FNIS_indexes)
+
+    def test_fuzzy_number_distance_calculation(self):
+        dist = self.ranker._fuzzy_number_distance_calculation((1.0,2.0,3.0), (6.0, 5.0, 4.0))
+        exp_dist = 3.415650255
+        self.assertAlmostEqual(dist, exp_dist, places=2)
+
+
+    def test_calculate_distance_from_ideal_solutions(self):
+        self.ranker.weighted_norm_decision_matrix = [
+            [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
+            [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
+        ]
+
+        self.ranker.FPIS_indexes = [0, 1, 1]
+        self.ranker.FNIS_indexes = [1, 0, 0]
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=True)
+        exp_dist = 0
+        self.assertEqual(dist, exp_dist)
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=True)
+        exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.489, 1.0), (0.09, 0.524, 1.0))
+        self.assertAlmostEqual(dist, exp_dist)
+
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=False)
+        exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.524, 1.0), (0.09, 0.489, 1.0))
+        self.assertAlmostEqual(dist, exp_dist)
+
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=False)
+        exp_dist = 0
+        self.assertEqual(dist, exp_dist)
+
+
+    def test_distance_from_FPIS_FNIS(self):
+        self.ranker.weighted_norm_decision_matrix = [
+            [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
+            [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
+        ]
+
+        self.ranker.FPIS_indexes = [0, 1, 1]
+        self.ranker.FNIS_indexes = [1, 0, 0]
+
+        self.ranker._distance_from_FPIS_FNIS()
+
+        exp_fpis_distances_per_criterion = [
+            [0, 0.353, 0.200],
+            [0.020, 0, 0]
+        ]
+        exp_fpis_distances = [0.553, 0.02]
+        exp_fnis_distances_per_criterion = [
+            [0.0202, 0, 0],
+            [0, 0.353, 0.200]
+        ]
+        exp_fnis_distances = [0.02, 0.553]
+
+
+        self.assertAlmostEqual(self.ranker.fpis_distances[0], exp_fpis_distances[0], places=3)
+        self.assertAlmostEqual(self.ranker.fpis_distances[1], exp_fpis_distances[1], places=3)
+
+        self.assertAlmostEqual(self.ranker.fnis_distances[0], exp_fnis_distances[0], places=3)
+        self.assertAlmostEqual(self.ranker.fnis_distances[1], exp_fnis_distances[1], places=3)
+
+    def test_calculate_closeness_coefficients(self):
+        self.ranker.fpis_distances = [0.553, 0.02]
+        self.ranker.fnis_distances = [0.02, 0.553]
+        self.ranker._calculate_closeness_coefficients()
+        expected_ccs = [0.0349, 0.965]
+        self.assertAlmostEqual(self.ranker.clonseness_coefficients[0], expected_ccs[0], places=3)
+        self.assertAlmostEqual(self.ranker.clonseness_coefficients[1], expected_ccs[1], places=3)
+
+    def test_rank_alternatives(self):
+        self.ranker.clonseness_coefficients = [0.035, 0.965]
+        expected_rank_index = [1, 0]
+        self.ranker._rank_alternatives()
+        self.assertListEqual(self.ranker.ranking_indexes, expected_rank_index)
+
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._aggregated_ratings_and_weights')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._normalized_decision_matrix')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._weighted_normalized_decision_matrix')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._calculate_FPIS_FNIS')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._distance_from_FPIS_FNIS')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._calculate_closeness_coefficients')
+    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._rank_alternatives')
+    def test_evaluate_calls_all_steps_and_returns_ranking_indexes(self, m_7, m_6, m_5, m_4, m_3, m_2, m_1):
+        self.ranker.ranking_indexes = 'mocked'
+        ret = self.ranker.evaluate()
+        m_1.assert_called_once()
+        m_2.assert_called_once()
+        m_3.assert_called_once()
+        m_4.assert_called_once()
+        m_5.assert_called_once()
+        m_6.assert_called_once()
+        m_7.assert_called_once()
+        self.assertEqual(ret, 'mocked')
+
+    def test_evalute_end_to_end(self):
+        ret = self.ranker.evaluate()
+        expected_rank_index = [1, 0]
+        self.assertListEqual(ret, expected_rank_index)
+
+        expected_ccs = [0.0349, 0.965]
+        self.assertAlmostEqual(self.ranker.clonseness_coefficients[0], expected_ccs[0], places=3)
+        self.assertAlmostEqual(self.ranker.clonseness_coefficients[1], expected_ccs[1], places=3)
