@@ -187,3 +187,18 @@ class TestFuzzyTOPSIS(TestCase):
                         exp_weighted_norm_decision_matrix[alt_i][crit_j][triple_i],
                         places=3
                     )
+
+
+
+    def test_calculate_FPIS_FNIS(self):
+        self.ranker.weighted_norm_decision_matrix = [
+            [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
+            [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
+        ]
+
+        self.ranker._calculate_FPIS_FNIS()
+        exp_FPIS_indexes = [0, 1, 1]
+        exp_FNIS_indexes = [1, 0, 0]
+
+        self.assertListEqual(self.ranker.FPIS_indexes, exp_FPIS_indexes)
+        self.assertListEqual(self.ranker.FNIS_indexes, exp_FNIS_indexes)

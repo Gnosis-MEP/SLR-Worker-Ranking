@@ -42,6 +42,8 @@ class FuzzyTOPSIS(object):
         self.agg_criteria_weights = None
         self.norm_decision_matrix = None
         self.weighted_norm_decision_matrix = None
+        self.FPIS_indexes = None
+        self.FNIS_indexes = None
 
         # self.validate_inputs(alt, k_benefit_crit, k_cost_crit)
 
@@ -219,7 +221,37 @@ class FuzzyTOPSIS(object):
         """
         Fifith step in fuzzy TOPSIS, in which the
         Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
+        Yuen’s method:
+            FPIS: get the max alternative value of each criterion. compare alternatives first based on the right, then middle, then left.
+            FNIS: get the min alternative value of each criterion. compare alternatives first based on the left, then middle, then right.
         """
+        self.FPIS_indexes = []
+        self.FNIS_indexes = []
+        for crit_j in range(self.num_criteria):
+            fpis = self.weighted_norm_decision_matrix[0][crit_j]
+            fpis_alt_i = 0
+            fnis = self.weighted_norm_decision_matrix[0][crit_j]
+            fnis_alt_i = 0
+            for alt_i, alternative in enumerate(self.weighted_norm_decision_matrix):
+                criterion = alternative[crit_j]
+                found_vi_min = False
+                found_vi_max = False
+
+                # compare each fuzzy number value
+                for vi_min in range(3):
+                    vi_max = 2 - vi_min
+
+                    if not found_vi_max and criterion[vi_max] > fpis[vi_max]:
+                        fpis = criterion
+                        fpis_alt_i = alt_i
+                        found_vi_max = True
+                    if not found_vi_min and criterion[vi_min] < fnis[vi_min]:
+                        fnis = criterion
+                        fnis_alt_i = alt_i
+                        found_vi_min = True
+
+            self.FPIS_indexes.append(fpis_alt_i)
+            self.FNIS_indexes.append(fnis_alt_i)
 
 
     def _distance_from_FPIS_FNIS(self):
