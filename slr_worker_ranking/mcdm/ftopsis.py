@@ -28,16 +28,40 @@ class FuzzyTOPSIS(object):
     """
 
 
-    def __init__(self, criteria_benefit_indicator):
-        self.criteria_benefit_indicator = criteria_benefit_indicator
-        self.num_alternatives = None
-        self.num_criteria = len(self.criteria_benefit_indicator)
-        self.decision_matrix_list = []
-        self.criteria_weights_list = []
+    def __init__(self, criteria_benefit_indicator,
+                 decision_matrix_list=None, criteria_weights_list=None,
+                 agg_alt_fuzzy_method=None, agg_crit_fuzzy_method=None, norm_alt_fuzzy_method=None):
+        if decision_matrix_list is None or criteria_weights_list is None:
+            decision_matrix_list = []
+            criteria_weights_list = []
+            num_alternatives = None
+            num_decision_makers = None
+        else:
+            num_alternatives = len(decision_matrix_list[0])
+            num_decision_makers = len(decision_matrix_list)
 
-        self.agg_alt_fuzzy_method = self._defaut_alt_agg_fuzzy_rating_method
-        self.agg_crit_fuzzy_method = self._defaut_crit_agg_fuzzy_weight_method
-        self.norm_alt_fuzzy_method = self._default_normalize_alternative_method
+        self.criteria_benefit_indicator = criteria_benefit_indicator
+        self.num_alternatives = num_alternatives
+        self.num_decision_makers = num_alternatives
+        self.num_criteria = len(self.criteria_benefit_indicator)
+
+
+        self.decision_matrix_list = decision_matrix_list
+        self.criteria_weights_list = criteria_weights_list
+
+        self.validate_inputs(criteria_benefit_indicator,decision_matrix_list, criteria_weights_list)
+
+        if agg_alt_fuzzy_method is None:
+            agg_alt_fuzzy_method = self._defaut_alt_agg_fuzzy_rating_method
+        self.agg_alt_fuzzy_method = agg_alt_fuzzy_method
+
+        if agg_crit_fuzzy_method is None:
+            agg_crit_fuzzy_method = self._defaut_crit_agg_fuzzy_weight_method
+        self.agg_crit_fuzzy_method = agg_crit_fuzzy_method
+
+        if norm_alt_fuzzy_method is None:
+            norm_alt_fuzzy_method = self._default_normalize_alternative_method
+        self.norm_alt_fuzzy_method = norm_alt_fuzzy_method
 
         self.agg_decision_matrix = None
         self.agg_criteria_weights = None
@@ -55,40 +79,48 @@ class FuzzyTOPSIS(object):
         self.clonseness_coefficients = None
         self.ranking_indexes = None
 
-        # self.validate_inputs(alt, k_benefit_crit, k_cost_crit)
-
-        # self.alternatives = alt
-        # self.benefit_criteria = k_benefit_crit
-        # self.cost_criteria = k_cost_crit
-
-        # self.agg_alternatives = None
-        # self.agg_benefit_criteria = None
-        # self.agg_cost_criteria = None
 
 
-    # def validate_inputs(self, alt, k_benefit_crit, k_cost_crit):
-    #     assert len(k_benefit_crit) == len(k_cost_crit), "Inconsistent decision makers criteria vectors lenght."
-    #     assert len(k_benefit_crit) == len(alt), "Inconsistent decision makers alternatives vectors lenght."
+    def validate_inputs(self, criteria_benefit_indicator, decision_matrix_list, criteria_weights_list):
+        assert self.num_criteria > 0, "Number of criteria should be more than zero."
+
+        num_decision_makers = len(decision_matrix_list)
+        if num_decision_makers > 0:
+            assert num_decision_makers == len(criteria_weights_list), "Inconsistent number of decision makers in criteria weights list input"
+            num_alternatives = len(decision_matrix_list[0])
+            if self.num_alternatives is None:
+                self.num_alternatives = num_alternatives
+
+            for i_dm, dm in enumerate(decision_matrix_list):
+                cw = criteria_weights_list[i_dm]
+                self._validate_decision_maker(dm, cw)
+
+
+    def _validate_decision_maker(self, decision_matrix, criteria_weights):
+        num_alternatives = len(decision_matrix)
+        num_criteria = len(decision_matrix[0])
+        if self.num_alternatives is not None:
+            assert num_alternatives == self.num_alternatives, f"invalid number of alternatives in decision matrix: {num_alternatives} != {self.num_alternatives}"
+
+        assert num_criteria == self.num_criteria, f"invalid number of criteria in decision matrix: {num_criteria} != {self.num_criteria}"
+        num_criteria_w = len(criteria_weights)
+        assert num_criteria_w == self.num_criteria,  f"invalid number of criteria in criteria weights: {num_criteria_w} != {self.num_criteria}"
 
 
     def add_decision_maker(self, decision_matrix, criteria_weights):
-        num_alternatives = len(decision_matrix)
-        num_criteria = len(decision_matrix[0])
         if self.num_alternatives is None:
+            num_alternatives = len(decision_matrix)
             self.num_alternatives = num_alternatives
-        else:
-            assert num_alternatives == self.num_alternatives, f"invalid number of alternatives in new decision matrix: {num_alternatives} != {self.num_alternatives}"
-
-        assert num_criteria == self.num_criteria, f"invalid number of criteria in new decision matrix: {num_criteria} != {self.num_criteria}"
-        num_criteria_w = len(criteria_weights)
-        assert num_criteria_w == self.num_criteria,  f"invalid number of criteria in new criteria weights: {num_criteria_w} != {self.num_criteria}"
+        self._validate_decision_maker(decision_matrix, criteria_weights)
 
         self.decision_matrix_list.append(decision_matrix)
         self.criteria_weights_list.append(criteria_weights)
         self.num_decision_makers = len(self.decision_matrix_list)
 
-    def evaluate(self):
-        # self._assign_ratings_and_weights()
+    def evaluate(self, validate_first=True):
+        if validate_first:
+            self.validate_inputs(self.criteria_benefit_indicator, self.decision_matrix_list, self.criteria_weights_list)
+
         self._aggregated_ratings_and_weights()
         self._normalized_decision_matrix()
         self._weighted_normalized_decision_matrix()

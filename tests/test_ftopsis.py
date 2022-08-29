@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from slr_worker_ranking.ftopsis import FuzzyTOPSIS
+from slr_worker_ranking.mcdm.ftopsis import FuzzyTOPSIS
 
 
 class TestFuzzyTOPSIS(TestCase):
@@ -43,10 +43,13 @@ class TestFuzzyTOPSIS(TestCase):
             ]
         }
         self.criteria_benefit_indicator = [True, False, True] # crit1 and 3 are benefit, and crit 2 is cost
-        self.ranker = FuzzyTOPSIS(criteria_benefit_indicator=self.criteria_benefit_indicator)
-        self.ranker.add_decision_maker(**self.dm_1)
-        self.ranker.add_decision_maker(**self.dm_2)
-
+        self.decision_matrix_list = [self.dm_1['decision_matrix'], self.dm_2['decision_matrix']]
+        self.criteria_weights_list = [self.dm_1['criteria_weights'], self.dm_2['criteria_weights']]
+        self.ranker = FuzzyTOPSIS(
+            criteria_benefit_indicator=self.criteria_benefit_indicator,
+            decision_matrix_list=self.decision_matrix_list,
+            criteria_weights_list=self.criteria_weights_list
+        )
     def test_add_decision_maker(self):
         new_ranker = FuzzyTOPSIS(criteria_benefit_indicator=self.criteria_benefit_indicator)
         new_ranker.add_decision_maker(**self.dm_1)
@@ -98,8 +101,8 @@ class TestFuzzyTOPSIS(TestCase):
 
         self.assertListEqual(agg_criteria_weights, exp_agg_crit_weights)
 
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._all_agg_ratings')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._all_agg_weights')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._all_agg_ratings')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._all_agg_weights')
     def test_aggregated_ratings_and_weights_should_call_methods_and_set_vars(self, m_agg_w, m_agg_r):
         agg_r = 'mock agg alternatives'
         m_agg_r.return_value = agg_r
@@ -276,14 +279,15 @@ class TestFuzzyTOPSIS(TestCase):
         self.ranker._rank_alternatives()
         self.assertListEqual(self.ranker.ranking_indexes, expected_rank_index)
 
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._aggregated_ratings_and_weights')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._normalized_decision_matrix')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._weighted_normalized_decision_matrix')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._calculate_FPIS_FNIS')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._distance_from_FPIS_FNIS')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._calculate_closeness_coefficients')
-    @patch('slr_worker_ranking.ftopsis.FuzzyTOPSIS._rank_alternatives')
-    def test_evaluate_calls_all_steps_and_returns_ranking_indexes(self, m_7, m_6, m_5, m_4, m_3, m_2, m_1):
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS.validate_inputs')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._aggregated_ratings_and_weights')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._normalized_decision_matrix')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._weighted_normalized_decision_matrix')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._calculate_FPIS_FNIS')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._distance_from_FPIS_FNIS')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._calculate_closeness_coefficients')
+    @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._rank_alternatives')
+    def test_evaluate_calls_all_steps_and_returns_ranking_indexes(self, m_8, m_7, m_6, m_5, m_4, m_3, m_2, m_1):
         self.ranker.ranking_indexes = 'mocked'
         ret = self.ranker.evaluate()
         m_1.assert_called_once()
@@ -293,6 +297,7 @@ class TestFuzzyTOPSIS(TestCase):
         m_5.assert_called_once()
         m_6.assert_called_once()
         m_7.assert_called_once()
+        m_8.assert_called_once()
         self.assertEqual(ret, 'mocked')
 
     def test_evalute_end_to_end(self):
