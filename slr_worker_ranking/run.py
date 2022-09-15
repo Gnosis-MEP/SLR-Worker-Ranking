@@ -12,6 +12,8 @@ from slr_worker_ranking.conf import (
     LOGGING_LEVEL,
     TRACER_REPORTING_HOST,
     TRACER_REPORTING_PORT,
+    RANKER_CRITERIA,
+    RANKER_TYPE,
     SERVICE_DETAILS,
 )
 
@@ -28,6 +30,8 @@ def run_service():
         pub_event_list=PUB_EVENT_LIST,
         service_details=SERVICE_DETAILS,
         stream_factory=stream_factory,
+        ranker_criteria=RANKER_CRITERIA,
+        ranker_type=RANKER_TYPE,
         logging_level=LOGGING_LEVEL,
         tracer_configs=tracer_configs
     )

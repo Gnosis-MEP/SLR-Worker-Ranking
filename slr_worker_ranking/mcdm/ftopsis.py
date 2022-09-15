@@ -4,7 +4,8 @@ import numpy as np
 
 class FuzzyTOPSIS(object):
     """
-    Class for running the Fuzzy TOPSIS ranking.
+    Class for running the Fuzzy TOPSIS ranking. Using [1] for the default aggregation methods of alternatives, criteria and normalisation.
+
 
     Parameters
     ----------
@@ -25,6 +26,16 @@ class FuzzyTOPSIS(object):
     decision_matrix_list = [decision_maker_1_decision_matrix, decision_maker_2_decision_matrix]
     weights_list = [decision_maker_1_weights, decision_maker_2_weights]
     criteria_benefit_indicator = [True, False, True] # indicates that crit1 and 3 are benefit, and crit 2 is cost.
+
+    Notes
+    -----
+    Algorithm implemented from  [1]_.
+
+    References
+    ----------
+    .. [1] Chen, C.T., 2000. Extensions of the TOPSIS for group decision-making under fuzzy environment.
+           Fuzzy sets and systems, 114(1), pp.1-9.
+
     """
 
 
@@ -350,6 +361,9 @@ class FuzzyTOPSIS(object):
             denominator = self.fnis_distances[alt_j] + self.fpis_distances[alt_j]
             close_coeff = nominator / denominator
             self.clonseness_coefficients.append(close_coeff)
+
+    def get_alternatives_ranking_scores(self):
+        return self.clonseness_coefficients
 
     def _rank_alternatives(self):
         """

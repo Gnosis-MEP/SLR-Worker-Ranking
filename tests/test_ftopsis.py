@@ -7,6 +7,7 @@ from slr_worker_ranking.mcdm.ftopsis import FuzzyTOPSIS
 class TestFuzzyTOPSIS(TestCase):
 
     def setUp(self):
+        # Sorin N˘ad˘aban et al. / Procedia Computer Science 91 ( 2016 ) 823 – 831 (Table 2. Linguistic terms for alternatives ratings)
         self.rat_lf = {
             'very_good_rating': (9, 10, 10),
             'good_rating': (7, 9, 10),
