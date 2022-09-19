@@ -89,21 +89,21 @@ def main():
         new_msg(fuzzy_rated_worker_c)
     )
 
-    criteria_rank_cmd = stream_factory.create(LISTEN_EVENT_TYPE_QUERY_SERVICES_QOS_CRITERIA_RANKED, stype='streamOnly')
-    import ipdb; ipdb.set_trace()
+    # criteria_rank_cmd = stream_factory.create(LISTEN_EVENT_TYPE_QUERY_SERVICES_QOS_CRITERIA_RANKED, stype='streamOnly')
+    # import ipdb; ipdb.set_trace()
 
-    criteria_rank_cmd.write_events(
-        new_msg(
-        {
-            'query_id': 'some-query',
-            'required_services': ['SomeService', 'AnotherService'],
-            'qos_rank': {
-                'accuracy': (7, 9, 10),
-                'energy_consumption': (9, 10, 10),
-                'throughput':(1, 3, 5),
-            }
-        })
-    )
+    # criteria_rank_cmd.write_events(
+    #     new_msg(
+    #     {
+    #         'query_id': 'some-query',
+    #         'required_services': ['SomeService', 'AnotherService'],
+    #         'qos_rank': {
+    #             'accuracy': (7, 9, 10),
+    #             'energy_consumption': (9, 10, 10),
+    #             'throughput':(1, 3, 5),
+    #         }
+    #     })
+    # )
     # read published events output
     # events = new_event_type_cmd.read_events()
     # print(list(events))
