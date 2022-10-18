@@ -309,3 +309,54 @@ class TestFuzzyTOPSIS(TestCase):
         expected_ccs = [0.0349, 0.965]
         self.assertAlmostEqual(self.ranker.clonseness_coefficients[0], expected_ccs[0], places=3)
         self.assertAlmostEqual(self.ranker.clonseness_coefficients[1], expected_ccs[1], places=3)
+
+
+    # def test_division_by_zero_case(self):
+
+    #     # self.rat_lf = {
+    #     #     'high': (7, 9, 10),
+    #     #     'medium_high': (5, 7, 9),
+    #     #     'medium': (3, 5, 7),
+    #     #     'medium_low': (1, 3, 5),
+    #     #     'low': (1, 1, 3)
+    #     # }
+    #     # self.crit_lf = {
+    #     #     'high_importance': (0.7, 0.9, 1.0),
+    #     #     'medium_high_importance': (0.5, 0.7, 0.9),
+    #     #     'medium_importance': (0.3, 0.5, 0.7),
+    #     #     'medium_low_importance': (0.1, 0.3, 0.5),
+    #     #     'low_importance': (0.1, 0.1, 0.3),
+    #     # }
+
+    #     self.ranker.criteria_benefit_indicator = [False, True, True] # crit1 and 3 are benefit, and crit 2 is cost
+    #     self.ranker.decision_matrix_list = [
+    #         [
+    #             [[7, 9, 10], [7, 9, 10], [7, 9, 10]],
+    #             [[7, 9, 10], [7, 9, 10], [7, 9, 10]]
+    #         ]
+    #     ]
+    #     self.ranker.criteria_weights_list = [
+    #         [
+    #             [0.1, 0.3, 0.5], [0.1, 0.3, 0.5], [0.7, 0.9, 1.0]
+    #         ]
+    #     ]
+    #     # self.agg_decision_matrix = [[(7, 9.0, 10), (7, 9.0, 10), (7, 9.0, 10)], [(7, 9.0, 10), (7, 9.0, 10), (7, 9.0, 10)]]
+    #     # self.agg_criteria_weights = [(0.1, 0.3, 0.5), (0.1, 0.3, 0.5), (0.7, 0.9, 1.0)]
+    #     # self.norm_decision_matrix = [[(0.7, 0.7777777777777778, 1.0), (0.7, 0.9, 1.0), (0.7, 0.9, 1.0)], [(0.7, 0.7777777777777778, 1.0), (0.7, 0.9, 1.0), (0.7, 0.9, 1.0)]]
+    #     # self.weighted_norm_decision_matrix = [[[0.06999999999999999, 0.23333333333333334, 0.5], [0.06999999999999999, 0.27, 0.5], [0.48999999999999994, 0.81, 1.0]], [[0.06999999999999999, 0.23333333333333334, 0.5], [0.06999999999999999, 0.27, 0.5], [0.48999999999999994, 0.81, 1.0]]]
+
+    #     # self.FPIS_indexes = [0, 0, 0]
+    #     # self.FNIS_indexes = [0, 0, 0]
+    #     # self.fpis_distances = [0, 0.0]
+    #     # self.fpis_distances_per_criterion = [[0, 0, 0], [0.0, 0.0, 0.0]]
+    #     # self.fnis_distances = [0, 0.0]
+    #     # self.fnis_distances_per_criterion = [[0, 0, 0], [0.0, 0.0, 0.0]]
+
+
+    #     ret = self.ranker.evaluate()
+    #     expected_rank_index = [1, 0]
+    #     self.assertListEqual(ret, expected_rank_index)
+
+    #     expected_ccs = [0.0349, 0.965]
+    #     self.assertAlmostEqual(self.ranker.clonseness_coefficients[0], expected_ccs[0], places=3)
+    #     self.assertAlmostEqual(self.ranker.clonseness_coefficients[1], expected_ccs[1], places=3)

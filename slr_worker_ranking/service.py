@@ -88,11 +88,12 @@ class SLRWorkerRanking(BaseEventDrivenCMDService):
                 criteria_weights = slr_profile['criteria_weights']
                 # import ipdb;ipdb.set_trace()
                 ranking_index = [0]
-                ranking_scores = [0]
+                ranking_scores = [0] # check if this should be 0 or 1, just for consistency, if only one alt, then it should have the highest score
                 if len(decision_matrix) > 1:
                     # for query, criteria_weights_profile in self.query_criteria_weights_profile.items():
                     self.initialize_ranker()
                     self.ranker.add_decision_maker(decision_matrix=decision_matrix, criteria_weights=criteria_weights)
+                    # import ipdb; ipdb.set_trace()
                     ranking_index = self.ranker.evaluate()
                     ranking_scores = self.ranker.get_alternatives_ranking_scores()
                 slr_profile['alternatives_ids'] = list(service_alternatives.keys())

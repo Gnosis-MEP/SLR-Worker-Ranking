@@ -230,16 +230,25 @@ class FuzzyTOPSIS(object):
         return final_value
 
     def _default_normalize_alternative_method(self, alt_i, crit_j, minl_or_maxr_criteria):
+
+        print(f'_default_normalize_alternative_method: ({alt_i}, {crit_j}, {minl_or_maxr_criteria})')
         alternative = self.agg_decision_matrix[alt_i]
         criterion = alternative[crit_j]
         left_value, middle_value, right_value = criterion
+        print(f'alternative: {alternative}')
+        print(f'criterion: {criterion}')
 
         norm_alt_crit_j = None
         is_benefit_criterion = self.criteria_benefit_indicator[crit_j]
         if is_benefit_criterion:
             norm_alt_crit_j = ((left_value / minl_or_maxr_criteria), (middle_value / minl_or_maxr_criteria), (right_value / minl_or_maxr_criteria))
         else:
+            # try:
             norm_alt_crit_j = ((minl_or_maxr_criteria / right_value), (minl_or_maxr_criteria / middle_value), (minl_or_maxr_criteria / left_value))
+            # except:
+            #     import ipdb
+            #     ipdb.set_trace()
+            #     pass
         return norm_alt_crit_j
 
     def _normalized_decision_matrix(self):

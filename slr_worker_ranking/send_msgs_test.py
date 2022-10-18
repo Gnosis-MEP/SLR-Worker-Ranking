@@ -36,10 +36,10 @@ def new_msg(event_data):
 fuzzy_rated_worker_a = {
     'worker': {
         'service_type': 'SomeService',
-        'stream_key': 'some-worker-stream',
+        'stream_key': 'SomeServiceA',
         'queue_limit': 100,
-        'throughput': (3, 5, 7), # medium_rating
-        'accuracy': (1, 3, 5), # low_rating
+        'throughput': (7, 9, 10), # High_rating
+        'accuracy': (1, 1, 3), # low_rating
         'energy_consumption': (7, 9, 10), # High_rating
         'content_types': ['node_attribute:bounding_box', 'node_attribute:label']
     }
@@ -48,11 +48,11 @@ fuzzy_rated_worker_a = {
 fuzzy_rated_worker_b = {
     'worker': {
         'service_type': 'SomeService',
-        'stream_key': 'other-worker-stream',
+        'stream_key': 'SomeServiceB',
         'queue_limit': 100,
-        'throughput': (7, 9, 10), # High_rating
-        'accuracy': (9, 10, 10), # very_hight_rating
-        'energy_consumption': (1, 1, 3), # very_low_rating
+        'throughput': (1, 1, 3), # low_rating
+        'accuracy': (7, 9, 10), # High_rating
+        'energy_consumption': (1, 1, 3), # low_rating
         'content_types': ['node_attribute:bounding_box', 'node_attribute:label']
     }
 }
@@ -62,8 +62,8 @@ fuzzy_rated_worker_c = {
         'service_type': 'AnotherService',
         'stream_key': 'another-worker-stream',
         'queue_limit': 100,
-        'throughput': (3, 5, 7), # medium_rating
-        'accuracy': (9, 10, 10), # low_rating
+        'throughput': (7, 9, 10), # High_rating
+        'accuracy': (7, 9, 10), # High_rating
         'energy_consumption': (7, 9, 10), # High_rating
         'content_types': ['node_attribute:bounding_box', 'node_attribute:label']
     }
@@ -89,21 +89,21 @@ def main():
         new_msg(fuzzy_rated_worker_c)
     )
 
-    # criteria_rank_cmd = stream_factory.create(LISTEN_EVENT_TYPE_QUERY_SERVICES_QOS_CRITERIA_RANKED, stype='streamOnly')
-    # import ipdb; ipdb.set_trace()
+    criteria_rank_cmd = stream_factory.create(LISTEN_EVENT_TYPE_QUERY_SERVICES_QOS_CRITERIA_RANKED, stype='streamOnly')
+    import ipdb; ipdb.set_trace()
 
-    # criteria_rank_cmd.write_events(
-    #     new_msg(
-    #     {
-    #         'query_id': 'some-query',
-    #         'required_services': ['SomeService', 'AnotherService'],
-    #         'qos_rank': {
-    #             'accuracy': (7, 9, 10),
-    #             'energy_consumption': (9, 10, 10),
-    #             'throughput':(1, 3, 5),
-    #         }
-    #     })
-    # )
+    criteria_rank_cmd.write_events(
+        new_msg(
+        {
+            'query_id': 'some-query',
+            'required_services': ['SomeService', 'AnotherService'],
+            'qos_rank': {
+                'accuracy': [0.1, 0.3, 0.5],
+                'energy_consumption': [0.7, 0.9, 1.0],
+                'throughput': [0.3, 0.5, 0.7],
+            }
+        })
+    )
     # read published events output
     # events = new_event_type_cmd.read_events()
     # print(list(events))

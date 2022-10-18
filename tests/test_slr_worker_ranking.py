@@ -10,6 +10,8 @@ from slr_worker_ranking.conf import (
     SERVICE_CMD_KEY_LIST,
     SERVICE_DETAILS,
     PUB_EVENT_LIST,
+    RANKER_CRITERIA,
+    RANKER_TYPE,
 )
 
 
@@ -19,6 +21,8 @@ class TestSLRWorkerRanking(MockedEventDrivenServiceStreamTestCase):
         'service_cmd_key_list': SERVICE_CMD_KEY_LIST,
         'pub_event_list': PUB_EVENT_LIST,
         'service_details': SERVICE_DETAILS,
+        'ranker_type': RANKER_TYPE,
+        'ranker_criteria': RANKER_CRITERIA,
         'logging_level': 'ERROR',
         'tracer_configs': {'reporting_host': None, 'reporting_port': None},
     }
