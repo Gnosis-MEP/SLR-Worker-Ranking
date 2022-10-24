@@ -44,4 +44,4 @@ class CrispTOPSIS(BaseTOPSIS):
         if self.skc_result is None:
             return None
 
-        return self.skc_result.e_['similarity']
+        return self.skc_result.e_['similarity'].tolist()
