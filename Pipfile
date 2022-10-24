@@ -19,6 +19,7 @@ python-decouple = "==3.1"
 event-service-utils = "*"
 scikit-fuzzy = "==0.4.2"
 slr_worker_ranking = {path = ".",editable = true}
+scikit-criteria = "*"
 
 [requires]
 python_version = "3.6"
