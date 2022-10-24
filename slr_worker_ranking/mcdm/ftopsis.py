@@ -1,8 +1,9 @@
 from os import closerange
 import numpy as np
 
+from slr_worker_ranking.mcdm.base import BaseTOPSIS
 
-class FuzzyTOPSIS(object):
+class FuzzyTOPSIS(BaseTOPSIS):
     """
     Class for running the Fuzzy TOPSIS ranking. Using [1] for the default aggregation methods of alternatives, criteria and normalisation.
 
