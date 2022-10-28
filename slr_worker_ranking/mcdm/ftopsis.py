@@ -383,22 +383,11 @@ class AltFuzzyTOPSIS(FuzzyTOPSIS):
             decision_matrix_list, criteria_weights_list,
             agg_alt_fuzzy_method, agg_crit_fuzzy_method, norm_alt_fuzzy_method)
 
-        # if agg_alt_fuzzy_method is None:
-        #     agg_alt_fuzzy_method = self._defaut_alt_agg_fuzzy_rating_method
-        # self.agg_alt_fuzzy_method = agg_alt_fuzzy_method
-
-        # if agg_crit_fuzzy_method is None:
-        #     agg_crit_fuzzy_method = self._defaut_crit_agg_fuzzy_weight_method
-        # self.agg_crit_fuzzy_method = agg_crit_fuzzy_method
-
-        # if norm_alt_fuzzy_method is None:
-        #     norm_alt_fuzzy_method = self._default_normalize_alternative_method
-        # self.norm_alt_fuzzy_method = norm_alt_fuzzy_method
-
         self.FPIS_indexes = None
         self.FNIS_indexes = None
 
     def _defaut_alt_agg_fuzzy_rating_method(self, alt_i, crit_j):
+        "from Sorin N˘ad˘aban et al. / Procedia Computer Science 91 ( 2016 ) 823"
         min_left = np.inf
         avg_middle = 0
         max_right = 0
@@ -416,7 +405,7 @@ class AltFuzzyTOPSIS(FuzzyTOPSIS):
         return agg_alt_i_crit_j
 
     def _defaut_crit_agg_fuzzy_weight_method(self, crit_j):
-        # for each decision maker K weight specified for this criteria (initialising with first K)
+        "from Sorin N˘ad˘aban et al. / Procedia Computer Science 91 ( 2016 ) 823"
         min_left_value = np.inf
         avg_middle_value = 0
         max_right_value = 0

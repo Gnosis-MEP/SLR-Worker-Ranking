@@ -7,7 +7,9 @@ from slr_worker_ranking.mcdm.ftopsis import FuzzyTOPSIS, AltFuzzyTOPSIS
 
 
 class TestFuzzyTOPSIS(TestCase):
-
+    """
+    Testing general stuff with my own inputs
+    """
     def setUp(self):
         # Sorin N˘ad˘aban et al. / Procedia Computer Science 91 ( 2016 ) 823 – 831 (Table 2. Linguistic terms for alternatives ratings)
         self.rat_lf = {
@@ -64,13 +66,6 @@ class TestFuzzyTOPSIS(TestCase):
         new_ranker.add_decision_maker(**self.dm_2)
         self.assertListEqual(new_ranker.decision_matrix_list, [self.dm_1['decision_matrix'], self.dm_2['decision_matrix']])
         self.assertListEqual(new_ranker.criteria_weights_list, [self.dm_1['criteria_weights'], self.dm_2['criteria_weights']])
-
-
-    # def test_defaut_crit_agg_fuzzy_weight_method(self):
-    #     agg_crit_j_w = self.ranker._defaut_crit_agg_fuzzy_weight_method(crit_j=0)
-
-    #     exp_agg_crit_j_w = [0.3, 0.7, 1.0] # min(a) avg(b) max(c) of high_weight and medium_weight
-    #     self.assertEqual(agg_crit_j_w, exp_agg_crit_j_w)
 
 
     @patch('slr_worker_ranking.mcdm.ftopsis.FuzzyTOPSIS._all_agg_ratings')
@@ -164,7 +159,6 @@ class TestFuzzyTOPSIS(TestCase):
                     )
 
 
-
     def test_calculate_FPIS_FNIS(self):
         self.ranker.weighted_norm_decision_matrix = [
             [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
@@ -184,58 +178,54 @@ class TestFuzzyTOPSIS(TestCase):
         self.assertAlmostEqual(dist, exp_dist, places=2)
 
 
-    # def test_calculate_distance_from_ideal_solutions(self):
-    #     self.ranker.weighted_norm_decision_matrix = [
-    #         [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
-    #         [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
-    #     ]
+    def test_calculate_distance_from_ideal_solutions(self):
+        self.ranker.weighted_norm_decision_matrix = [
+            [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
+            [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
+        ]
+        self.ranker.FPIS_value = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+        self.ranker.FNIS_value = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=True)
+        exp_dist = 0.59
+        self.assertAlmostEqual(dist, exp_dist, places=2)
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=True)
+        exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.489, 1.0), (1, 1, 1))
+        self.assertAlmostEqual(dist, exp_dist, places=2)
 
-    #     self.ranker.FPIS_value = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
-    #     self.ranker.FNIS_value = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-    #     dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=True)
-    #     exp_dist = 0
-    #     self.assertEqual(dist, exp_dist)
-    #     dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=True)
-    #     exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.489, 1.0), (0.09, 0.524, 1.0))
-    #     self.assertAlmostEqual(dist, exp_dist)
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=False)
+        exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.524, 1.0), (0, 0, 0))
+        self.assertAlmostEqual(dist, exp_dist, places=2)
 
-    #     dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=0, crit_j=0, is_positive=False)
-    #     exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.524, 1.0), (0.09, 0.489, 1.0))
-    #     self.assertAlmostEqual(dist, exp_dist)
+        dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=False)
+        exp_dist = self.ranker._fuzzy_number_distance_calculation((0.09, 0.489, 1.0), (0, 0, 0))
+        self.assertAlmostEqual(dist, exp_dist, places=2)
 
-    #     dist = self.ranker._calculate_distance_from_ideal_solutions(alt_i=1, crit_j=0, is_positive=False)
-    #     exp_dist = 0
-    #     self.assertEqual(dist, exp_dist)
+    def test_distance_from_FPIS_FNIS(self):
+        self.ranker.weighted_norm_decision_matrix = [
+            [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
+            [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
+        ]
 
+        self.ranker.FPIS_value = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+        self.ranker.FNIS_value = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
-    # def test_distance_from_FPIS_FNIS(self):
-    #     self.ranker.weighted_norm_decision_matrix = [
-    #         [(0.09, 0.524, 1.0), (0.03, 0.085, 0.3), (0.03, 0.24, 0.63)],
-    #         [(0.09, 0.489, 1.0), (0.06, 0.199, 0.9), (0.09, 0.449, 0.9)]
-    #     ]
+        self.ranker._distance_from_FPIS_FNIS()
 
-    #     self.ranker.FPIS_value = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
-    #     self.ranker.FNIS_value = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        exp_fpis_distances_per_criterion = [
+            [0.5929238287222623, 0.8695065650509297, 0.7428324171709255],
+            [0.6025559448438516, 0.7153556225169875, 0.616901126599717]
+        ]
 
-    #     self.ranker._distance_from_FPIS_FNIS()
+        exp_fpis_distances = [2.2052628109441175, 1.934812693960556]
+        exp_fnis_distances_per_criterion = [
+            [0.65, 0.18, 0.39],
+            [0.64, 0.53, 0.58]
+        ]
+        exp_fnis_distances = [1.22, 1.76]
 
-    #     exp_fpis_distances_per_criterion = [
-    #         [0, 0.353, 0.200],
-    #         [0.020, 0, 0]
-    #     ]
-    #     exp_fpis_distances = [0.553, 0.02]
-    #     exp_fnis_distances_per_criterion = [
-    #         [0.0202, 0, 0],
-    #         [0, 0.353, 0.200]
-    #     ]
-    #     exp_fnis_distances = [0.02, 0.553]
+        np.testing.assert_almost_equal(self.ranker.fpis_distances, exp_fpis_distances, decimal=2)
+        np.testing.assert_almost_equal(self.ranker.fnis_distances, exp_fnis_distances, decimal=2)
 
-
-    #     self.assertAlmostEqual(self.ranker.fpis_distances[0], exp_fpis_distances[0], places=3)
-    #     self.assertAlmostEqual(self.ranker.fpis_distances[1], exp_fpis_distances[1], places=3)
-
-    #     self.assertAlmostEqual(self.ranker.fnis_distances[0], exp_fnis_distances[0], places=3)
-    #     self.assertAlmostEqual(self.ranker.fnis_distances[1], exp_fnis_distances[1], places=3)
 
     def test_calculate_closeness_coefficients(self):
         self.ranker.fpis_distances = [0.553, 0.02]
@@ -272,15 +262,13 @@ class TestFuzzyTOPSIS(TestCase):
         m_8.assert_called_once()
         self.assertEqual(ret, 'mocked')
 
-    # def test_evalute_end_to_end(self):
-    #     ret = self.ranker.evaluate()
-    #     expected_rank_index = [1, 0]
-    #     self.assertListEqual(ret, expected_rank_index)
-
-    #     expected_ccs = [0.0349, 0.965]
-    #     self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=3)
-    #     self.assertAlmostEqual(self.ranker.closeness_coefficients[1], expected_ccs[1], places=3)
-
+    def test_evalute_end_to_end(self):
+        ret = self.ranker.evaluate()
+        expected_rank_index = [1, 0]
+        self.assertListEqual(ret, expected_rank_index)
+        expected_ccs = [0.352, 0.495]
+        self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=3)
+        self.assertAlmostEqual(self.ranker.closeness_coefficients[1], expected_ccs[1], places=3)
 
 
 class TestFuzzyTOPSISWithChenInputs(TestCase):
@@ -313,7 +301,7 @@ class TestFuzzyTOPSISWithChenInputs(TestCase):
                 [self.rat_lf['G'], self.rat_lf['VG'], self.rat_lf['VG'], self.rat_lf['VG'], self.rat_lf['VG']],
                 [self.rat_lf['VG'], self.rat_lf['MG'], self.rat_lf['G'], self.rat_lf['G'], self.rat_lf['G']],
             ],
-            'criteria_weights': [ # weights for crit1, 2 and 3 as "high_weight", "medium_weight" the last two
+            'criteria_weights': [
                 self.crit_lf['H'], self.crit_lf['VH'], self.crit_lf['VH'], self.crit_lf['VH'], self.crit_lf['M']
             ]
         }
@@ -350,188 +338,56 @@ class TestFuzzyTOPSISWithChenInputs(TestCase):
         )
 
     def test_defaut_alt_agg_fuzzy_rating_method(self):
-        # MG-G-MG
-        # (5, 7, 9),(7, 9, 10),(5, 7, 9),
         agg_alt_i_crit_j = self.ranker._defaut_alt_agg_fuzzy_rating_method(alt_i=0, crit_j=0)
-        exp_agg_alt_i_crit_j = (5.67, 7.67, 9.33)
-        # self.assertEqual(agg_alt_i_crit_j, exp_agg_alt_i_crit_j)
+        exp_agg_alt_i_crit_j = [5.67, 7.67, 9.33]
         np.testing.assert_almost_equal(agg_alt_i_crit_j, exp_agg_alt_i_crit_j, decimal=2)
 
-    # def test_all_agg_weights(self):
-    #     agg_criteria_weights = self.ranker._all_agg_weights()
-    #     exp_agg_crit_weights = [(0.3, 0.7, 1.0), (0.3, 0.6, 0.9), (0.3, 0.6, 0.9)]
+    def test_all_agg_ratings(self):
+        agg_decision_matrix = self.ranker._all_agg_ratings()
+        exp_alt1_ratings = [[5.67, 7.67, 9.33], [5, 7, 8.67], [5.67, 7.67, 9], [8.33, 9.67, 10], [3, 5, 7]]
+        np.testing.assert_array_almost_equal(agg_decision_matrix[0], exp_alt1_ratings, decimal=2)
 
-    #     self.assertEqual(len(agg_criteria_weights), 3)
-    #     self.assertEqual(len(agg_criteria_weights[0]), 3)
-    #     self.assertEqual(len(agg_criteria_weights[1]), 3)
-    #     self.assertEqual(len(agg_criteria_weights[2]), 3)
+        exp_alt2_ratings = [[6.33, 8.33, 9.67], [9.0, 10.0, 10.0], [8.33, 9.67, 10.0], [9.0, 10.0, 10.0], [7.0, 8.67, 9.67]]
+        exp_alt3_ratings = [[6.33, 8.0, 9.0], [7.0, 8.67, 9.67], [7.0, 8.67, 9.67], [7.0, 8.67, 9.67], [6.33, 8.33, 9.67]]
+        expected_ratings = [
+            exp_alt1_ratings,
+            exp_alt2_ratings,
+            exp_alt3_ratings
+        ]
+        self.assertEqual(len(agg_decision_matrix), 3)
 
-    #     self.assertListEqual(agg_criteria_weights, exp_agg_crit_weights)
+        self.assertEqual(len(agg_decision_matrix[0]), 5)
+        self.assertEqual(len(agg_decision_matrix[1]), 5)
+        self.assertEqual(len(agg_decision_matrix[2]), 5)
 
-    # def test_all_agg_ratings(self):
-    #     # import ipdb;ipdb.set_trace()
-    #     agg_decision_matrix = self.ranker._all_agg_ratings()
-    #     exp_alt1_ratings = [[5.7, 7.7, 9.3], [5, 7, 9], [5.7, 7.7, 9], [8.33, 9.67, 10], [3, 5, 7]]
-    #     exp_alt2_ratings = [[5.7, 7.7, 9.3], [5, 7, 9], [5.7, 7.7, 9], [8.33, 9.67, 10], [3, 5, 7]]
-    #     exp_alt3_ratings = [[5.7, 7.7, 9.3], [5, 7, 9], [5.7, 7.7, 9], [8.33, 9.67, 10], [3, 5, 7]]
-    #     expected_ratings = [
-    #         exp_alt1_ratings,
-    #         exp_alt2_ratings,
-    #         exp_alt3_ratings
-    #     ]
-    #     self.assertEqual(len(agg_decision_matrix), 3)
+        self.assertEqual(len(agg_decision_matrix[0][0]), 3)
 
-    #     self.assertEqual(len(agg_decision_matrix[0]), 5)
-    #     self.assertEqual(len(agg_decision_matrix[1]), 5)
-    #     self.assertEqual(len(agg_decision_matrix[2]), 5)
+        np.testing.assert_array_almost_equal(agg_decision_matrix, expected_ratings, decimal=2)
 
-    #     self.assertEqual(len(agg_decision_matrix[0][0]), 3)
+    def test_defaut_crit_agg_fuzzy_weight_method(self):
+        agg_weight_crit_j = self.ranker._defaut_crit_agg_fuzzy_weight_method(crit_j=0)
+        exp_agg_weight_crit_j = [0.7, 0.87, 0.97]
+        np.testing.assert_almost_equal(agg_weight_crit_j, exp_agg_weight_crit_j, decimal=2)
 
-    #     np.testing.assert_array_almost_equal(agg_decision_matrix[0], expected_ratings[0], decimal=3)
-    #     self.assertListEqual(agg_decision_matrix, expected_ratings)
+    def test_all_agg_weights(self):
+        agg_criteria_weights = self.ranker._all_agg_weights()
+        exp_agg_crit_weights = [[0.7, 0.87, 0.97], [0.9, 1.0, 1.0], [0.77, 0.93, 1], [0.9, 1.0, 1.0], [0.43, 0.63, 0.83]]
+
+        self.assertEqual(len(agg_criteria_weights), 5)
+        self.assertEqual(len(agg_criteria_weights[0]), 3)
+        np.testing.assert_almost_equal(agg_criteria_weights, exp_agg_crit_weights, decimal=2)
+
 
     def test_evalute_end_to_end(self):
         ret = self.ranker.evaluate()
         expected_rank_index = [1, 2, 0]
         self.assertListEqual(ret, expected_rank_index)
 
-        expected_ccs = [0.62, 0.77, 0.71]
-        self.assertAlmostEqual(self.ranker.closeness_coefficients[1], expected_ccs[1], places=3)
-        self.assertAlmostEqual(self.ranker.closeness_coefficients[2], expected_ccs[2], places=3)
-        self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=3)
+        # deviation from reported values in Chen's original paper  (0.62, 0.77, 0.71)
+        # the rounding of numbers and a wrong value on Table 5 (aggregated attributes) for A1, C2
+        # could be the culprit for this disdrepancy
+        expected_ccs = [0.64, 0.77, 0.70]
+        self.assertAlmostEqual(self.ranker.closeness_coefficients[1], expected_ccs[1], places=2)
+        self.assertAlmostEqual(self.ranker.closeness_coefficients[2], expected_ccs[2], places=2)
+        self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=2)
 
-
-
-# class TestFuzzyTOPSISWithElissaNadiaMadiInputs(TestCase):
-
-#     def setUp(self):
-#         "inputs and values from: A comparison between two types of Fuzzy TOPSIS Method Elissa"
-#         self.crit_lf = {
-#             'VH': (0.9, 1.0, 1.0),
-#             'H': (0.7, 0.9, 1.0),
-#             'MH': (0.5, 0.7, 0.9),
-#             'M': (0.3, 0.5, 0.7),
-#             'ML': (0.1, 0.3, 0.5),
-#             'L': (0, 0.1, 0.3),
-#             'VL': (0.0, 0.0, 0.1),
-#         }
-
-#         self.rat_lf = {
-#             'VG': (9, 10, 10),
-#             'G': (7, 9, 10),
-#             'MG': (5, 7, 9),
-#             'F': (3, 5, 7),
-#             'MP': (1, 3, 5),
-#             'P': (0, 1, 3),
-#             'VP': (0, 0, 1)
-#         }
-
-
-#         self.dm_1 = {
-#             'decision_matrix': [
-#                 [self.rat_lf['MG'], self.rat_lf['G'], self.rat_lf['F']],
-#                 [self.rat_lf['G'], self.rat_lf['G'], self.rat_lf['G']],
-#                 [self.rat_lf['MG'], self.rat_lf['MG'], self.rat_lf['G']],
-#             ],
-#             'criteria_weights': [
-#                 self.crit_lf['H'], self.crit_lf['VH'], self.crit_lf['VH']
-#             ]
-#         }
-
-#         self.dm_2 = {
-#             'decision_matrix': [
-#                 [self.rat_lf['G'], self.rat_lf['MG'], self.rat_lf['MG']],
-#                 [self.rat_lf['G'], self.rat_lf['G'], self.rat_lf['G']],
-#                 [self.rat_lf['MG'], self.rat_lf['G'], self.rat_lf['MG']],
-#             ],
-#             'criteria_weights': [
-#                 self.crit_lf['VH'], self.crit_lf['VH'], self.crit_lf['H']
-#             ]
-#         }
-
-#         self.dm_3 = {
-#             'decision_matrix': [
-#                 [self.rat_lf['MG'], self.rat_lf['F'], self.rat_lf['MG']],
-#                 [self.rat_lf['MG'], self.rat_lf['G'], self.rat_lf['MG']],
-#                 [self.rat_lf['F'], self.rat_lf['G'], self.rat_lf['MG']],
-#             ],
-#             'criteria_weights': [
-#                 self.crit_lf['MH'], self.crit_lf['VH'], self.crit_lf['H']
-#             ]
-#         }
-
-#         self.criteria_benefit_indicator = [True, True, True]
-#         self.decision_matrix_list = [self.dm_1['decision_matrix'], self.dm_2['decision_matrix'], self.dm_3['decision_matrix']]
-#         self.criteria_weights_list = [self.dm_1['criteria_weights'], self.dm_2['criteria_weights'], self.dm_3['criteria_weights']]
-#         self.ranker = FuzzyTOPSIS(
-#             criteria_benefit_indicator=self.criteria_benefit_indicator,
-#             decision_matrix_list=self.decision_matrix_list,
-#             criteria_weights_list=self.criteria_weights_list
-#         )
-
-#     # def test_defaut_alt_agg_fuzzy_rating_method(self):
-#     #     agg_alt_i_crit_j = self.ranker._defaut_alt_agg_fuzzy_rating_method(alt_i=0, crit_j=0)
-#     #     exp_agg_alt_i_crit_j = (3, 7.5, 10) # min(a) avg(b) max(c) of very_good_rating and medium_rating
-#     #     self.assertEqual(agg_alt_i_crit_j, exp_agg_alt_i_crit_j)
-
-#     # def test_decision_matrix_is_correct(self):
-#     #     self.ranker._aggregated_ratings_and_weights()
-#     #     self.assertListEqual(self.ranker.agg_decision_matrix[0][0], [5.7, 7.7, 9.3])
-
-
-#     def test_all_agg_weights(self):
-
-#         agg_criteria_weights = self.ranker._all_agg_weights()
-#         exp_weights = [[0.7, 0.9, 1.0], [0.9, 1.0, 1.0], [0.77, 0.93, 1.0]]
-
-#         # self.assertEqual(len(agg_decision_matrix), 3)
-
-#         # self.assertEqual(len(agg_decision_matrix[0]), 5)
-#         # self.assertEqual(len(agg_decision_matrix[1]), 5)
-#         # self.assertEqual(len(agg_decision_matrix[2]), 5)
-
-#         # self.assertEqual(len(agg_decision_matrix[0][0]), 3)
-
-#         np.testing.assert_array_almost_equal(agg_criteria_weights[0], exp_weights[0], decimal=3)
-#         self.assertListEqual(agg_criteria_weights, exp_weights)
-
-#     # def test_all_agg_ratings(self):
-
-#     #     'G': (7, 9, 10),
-#     #     F-MG-MG
-#     #     (3, 5, 7),
-#     #     (5, 7, 9),
-#     #     (5, 7, 9),
-
-#     #     G MG MG
-
-#     #     agg_decision_matrix = self.ranker._all_agg_ratings()
-#     #     exp_alt1_ratings = [[5.67, 7.67, 9.33], [5, 7, 8.67], [4.333, 6.33, 8.33]]
-#     #     exp_alt2_ratings = [[5.7, 7.7, 9.3], [5, 7, 9], [5.7, 7.7, 9], [8.33, 9.67, 10], [3, 5, 7]]
-#     #     exp_alt3_ratings = [[5.7, 7.7, 9.3], [5, 7, 9], [5.7, 7.7, 9], [8.33, 9.67, 10], [3, 5, 7]]
-#     #     expected_ratings = [
-#     #         exp_alt1_ratings,
-#     #         exp_alt2_ratings,
-#     #         exp_alt3_ratings
-#     #     ]
-#     #     # self.assertEqual(len(agg_decision_matrix), 3)
-
-#     #     # self.assertEqual(len(agg_decision_matrix[0]), 5)
-#     #     # self.assertEqual(len(agg_decision_matrix[1]), 5)
-#     #     # self.assertEqual(len(agg_decision_matrix[2]), 5)
-
-#     #     # self.assertEqual(len(agg_decision_matrix[0][0]), 3)
-
-#     #     import ipdb;ipdb.set_trace()
-#     #     np.testing.assert_array_almost_equal(agg_decision_matrix[0], expected_ratings[0], decimal=3)
-#     #     self.assertListEqual(agg_decision_matrix, expected_ratings)
-
-#     def test_evalute_end_to_end(self):
-#         ret = self.ranker.evaluate()
-#         expected_rank_index = [1, 2, 0]
-#         self.assertListEqual(ret, expected_rank_index)
-#         # import ipdb;ipdb.set_trace()
-#         expected_ccs = [0.65, 0.74, 0.67]
-#         self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=3)
-#         self.assertAlmostEqual(self.ranker.closeness_coefficients[1], expected_ccs[1], places=3)
-#         self.assertAlmostEqual(self.ranker.closeness_coefficients[2], expected_ccs[2], places=3)
