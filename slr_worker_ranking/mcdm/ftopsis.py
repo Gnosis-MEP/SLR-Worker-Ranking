@@ -3,6 +3,7 @@ import numpy as np
 
 from slr_worker_ranking.mcdm.base import BaseTOPSIS
 
+
 class FuzzyTOPSIS(BaseTOPSIS):
     """
     Class for running the Fuzzy TOPSIS ranking. Using [1] for the default aggregation methods of alternatives, criteria and normalisation.
@@ -80,15 +81,17 @@ class FuzzyTOPSIS(BaseTOPSIS):
         self.norm_decision_matrix = None
         self.weighted_norm_decision_matrix = None
 
-        self.FPIS_indexes = None
+        self.FPIS_value = None
+        # self.FPIS_indexes = None
         self.fpis_distances = None
         self.fpis_distances_per_criterion = None
 
-        self.FNIS_indexes = None
+        self.FNIS_value = None
+        # self.FNIS_indexes = None
         self.fnis_distances = None
         self.fnis_distances_per_criterion = None
 
-        self.clonseness_coefficients = None
+        self.closeness_coefficients = None
         self.ranking_indexes = None
 
 
@@ -144,21 +147,28 @@ class FuzzyTOPSIS(BaseTOPSIS):
 
 
     def _defaut_alt_agg_fuzzy_rating_method(self, alt_i, crit_j):
-        min_left = np.inf
+        """
+            Same method for aggregating fuzzy ratings used in Chen [1].
+            Returns the avg of each individual value in the triangular fuzzy number
+        """
+        avg_left = 0
         avg_middle = 0
-        max_right = 0
+        avg_right = 0
         for dm in self.decision_matrix_list:
             alternative = dm[alt_i]
             criterion = alternative[crit_j]
             c_left, c_middle, c_right = criterion
 
-            min_left = min(min_left, c_left)
+            avg_left += c_left
             avg_middle += c_middle
-            max_right = max(max_right, c_right)
+            avg_right += c_right
+        avg_left = avg_left / self.num_decision_makers
         avg_middle = avg_middle / self.num_decision_makers
+        avg_right = avg_right / self.num_decision_makers
 
-        agg_alt_i_crit_j = (min_left, avg_middle, max_right)
+        agg_alt_i_crit_j = [avg_left, avg_middle, avg_right]
         return agg_alt_i_crit_j
+
 
     def _all_agg_ratings(self):
         """
@@ -177,20 +187,22 @@ class FuzzyTOPSIS(BaseTOPSIS):
 
     def _defaut_crit_agg_fuzzy_weight_method(self, crit_j):
         # for each decision maker K weight specified for this criteria (initialising with first K)
-        min_left_value = np.inf
+        avg_left_value = 0
         avg_middle_value = 0
-        max_right_value = 0
+        avg_right_value = 0
         for weights in self.criteria_weights_list:
             criterion_w = weights[crit_j]
 
             left_value, middle_value, right_value = criterion_w
-            min_left_value = min(min_left_value, left_value)
+            avg_left_value += left_value
             avg_middle_value += middle_value
-            max_right_value = max(max_right_value, right_value)
+            avg_right_value += right_value
 
+        avg_left_value = avg_left_value / self.num_decision_makers
         avg_middle_value = avg_middle_value / self.num_decision_makers
+        avg_right_value = avg_right_value / self.num_decision_makers
 
-        return (min_left_value, avg_middle_value, max_right_value)
+        return [avg_left_value, avg_middle_value, avg_right_value]
 
     def _all_agg_weights(self):
         """
@@ -232,24 +244,16 @@ class FuzzyTOPSIS(BaseTOPSIS):
 
     def _default_normalize_alternative_method(self, alt_i, crit_j, minl_or_maxr_criteria):
 
-        print(f'_default_normalize_alternative_method: ({alt_i}, {crit_j}, {minl_or_maxr_criteria})')
         alternative = self.agg_decision_matrix[alt_i]
         criterion = alternative[crit_j]
         left_value, middle_value, right_value = criterion
-        print(f'alternative: {alternative}')
-        print(f'criterion: {criterion}')
 
         norm_alt_crit_j = None
         is_benefit_criterion = self.criteria_benefit_indicator[crit_j]
         if is_benefit_criterion:
             norm_alt_crit_j = ((left_value / minl_or_maxr_criteria), (middle_value / minl_or_maxr_criteria), (right_value / minl_or_maxr_criteria))
         else:
-            # try:
             norm_alt_crit_j = ((minl_or_maxr_criteria / right_value), (minl_or_maxr_criteria / middle_value), (minl_or_maxr_criteria / left_value))
-            # except:
-            #     import ipdb
-            #     ipdb.set_trace()
-            #     pass
         return norm_alt_crit_j
 
     def _normalized_decision_matrix(self):
@@ -279,6 +283,155 @@ class FuzzyTOPSIS(BaseTOPSIS):
                     weight_norm_criterion.append(criterion[i] * weight[i])
                 alt_weighted_norm_criteria.append(weight_norm_criterion)
             self.weighted_norm_decision_matrix.append(alt_weighted_norm_criteria)
+
+    def _calculate_FPIS_FNIS(self):
+        """
+        Fifith step in fuzzy TOPSIS, in which the
+        Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
+        Chen’s method:
+            FPIS: (1, 1, 1)... simplification where positive and negative ideal are an alternative with 1s and 0s respectivelly
+            FNIS: (0, 0, 0)...
+        """
+        self.FPIS_value = []
+        self.FNIS_value = []
+        for crit_j in range(self.num_criteria):
+            fpis = [1, 1, 1]
+            fnis = [0, 0, 0]
+            self.FPIS_value.append(fpis)
+            self.FNIS_value.append(fnis)
+
+
+    def _fuzzy_number_distance_calculation(self, val1, val2):
+        "euclidian distance of two triangular fuzzy numbers proposed by Chen, C.T., 2000"
+        first_part = 0
+        for vi in range(3):
+            first_part += (val1[vi] - val2[vi])**2
+        second_part = first_part / 3
+        third_part = np.sqrt(second_part)
+        return third_part
+
+
+    def _calculate_distance_from_ideal_solutions(self, alt_i, crit_j, is_positive=True):
+        if is_positive:
+            # ideal_solution_index = self.FPIS_indexes[crit_j]
+            ideal_solution = self.FPIS_value
+        else:
+            ideal_solution = self.FNIS_value
+            # ideal_solution_index = self.FNIS_indexes[crit_j]
+        ideal_criterion = ideal_solution[crit_j]
+        criterion = self.weighted_norm_decision_matrix[alt_i][crit_j]
+        dist = 0
+        # if any(alt_i[i] != ideal_solution[i] for i in range(self.num_criteria):
+        dist = self._fuzzy_number_distance_calculation(criterion, ideal_criterion)
+        return dist
+
+    def _distance_from_FPIS_FNIS(self):
+        """
+        Sixth step in fuzzy TOPSIS, where the distances from each alternative to the
+        Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
+        """
+        self.fpis_distances = []
+        self.fpis_distances_per_criterion = []
+        self.fnis_distances = []
+        self.fnis_distances_per_criterion = []
+        for alt_i, alternative in enumerate(self.weighted_norm_decision_matrix):
+            alt_fpis_distances = []
+            alt_fnis_distances = []
+            for crit_j, criterion in enumerate(alternative):
+                fpis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=True)
+                fnis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=False)
+
+                alt_fpis_distances.append(fpis_dist)
+                alt_fnis_distances.append(fnis_dist)
+
+            self.fpis_distances_per_criterion.append(alt_fpis_distances)
+            self.fpis_distances.append(sum(alt_fpis_distances))
+            self.fnis_distances_per_criterion.append(alt_fnis_distances)
+            self.fnis_distances.append(sum(alt_fnis_distances))
+
+    def _calculate_closeness_coefficients(self):
+        """
+        Seventh step in fuzzy TOPSIS, where it is calculated the closeness coefficient for each alternative.
+        """
+        self.closeness_coefficients = []
+        for alt_j in range(self.num_alternatives):
+            nominator = self.fnis_distances[alt_j]
+            denominator = self.fnis_distances[alt_j] + self.fpis_distances[alt_j]
+            close_coeff = nominator / denominator
+            self.closeness_coefficients.append(close_coeff)
+
+    def get_alternatives_ranking_scores(self):
+        return self.closeness_coefficients
+
+    def _rank_alternatives(self):
+        """
+        Eight and last step in fuzzy TOPSIS, in which final alternative ranks are calculated as crips values.
+        """
+
+        self.ranking_indexes = sorted(range(self.num_alternatives), key=lambda k: self.closeness_coefficients[k], reverse=True)
+
+
+
+
+class AltFuzzyTOPSIS(FuzzyTOPSIS):
+
+    def __init__(self, criteria_benefit_indicator,
+                 decision_matrix_list=None, criteria_weights_list=None,
+                 agg_alt_fuzzy_method=None, agg_crit_fuzzy_method=None, norm_alt_fuzzy_method=None):
+
+        super(AltFuzzyTOPSIS, self).__init__(criteria_benefit_indicator,
+            decision_matrix_list, criteria_weights_list,
+            agg_alt_fuzzy_method, agg_crit_fuzzy_method, norm_alt_fuzzy_method)
+
+        # if agg_alt_fuzzy_method is None:
+        #     agg_alt_fuzzy_method = self._defaut_alt_agg_fuzzy_rating_method
+        # self.agg_alt_fuzzy_method = agg_alt_fuzzy_method
+
+        # if agg_crit_fuzzy_method is None:
+        #     agg_crit_fuzzy_method = self._defaut_crit_agg_fuzzy_weight_method
+        # self.agg_crit_fuzzy_method = agg_crit_fuzzy_method
+
+        # if norm_alt_fuzzy_method is None:
+        #     norm_alt_fuzzy_method = self._default_normalize_alternative_method
+        # self.norm_alt_fuzzy_method = norm_alt_fuzzy_method
+
+        self.FPIS_indexes = None
+        self.FNIS_indexes = None
+
+    def _defaut_alt_agg_fuzzy_rating_method(self, alt_i, crit_j):
+        min_left = np.inf
+        avg_middle = 0
+        max_right = 0
+        for dm in self.decision_matrix_list:
+            alternative = dm[alt_i]
+            criterion = alternative[crit_j]
+            c_left, c_middle, c_right = criterion
+
+            min_left = min(min_left, c_left)
+            avg_middle += c_middle
+            max_right = max(max_right, c_right)
+        avg_middle = avg_middle / self.num_decision_makers
+
+        agg_alt_i_crit_j = [min_left, avg_middle, max_right]
+        return agg_alt_i_crit_j
+
+    def _defaut_crit_agg_fuzzy_weight_method(self, crit_j):
+        # for each decision maker K weight specified for this criteria (initialising with first K)
+        min_left_value = np.inf
+        avg_middle_value = 0
+        max_right_value = 0
+        for weights in self.criteria_weights_list:
+            criterion_w = weights[crit_j]
+
+            left_value, middle_value, right_value = criterion_w
+            min_left_value = min(min_left_value, left_value)
+            avg_middle_value += middle_value
+            max_right_value = max(max_right_value, right_value)
+
+        avg_middle_value = avg_middle_value / self.num_decision_makers
+
+        return (min_left_value, avg_middle_value, max_right_value)
+
 
     def _calculate_FPIS_FNIS(self):
         """
@@ -317,13 +470,6 @@ class FuzzyTOPSIS(BaseTOPSIS):
             self.FNIS_indexes.append(fnis_alt_i)
 
 
-    def _fuzzy_number_distance_calculation(self, val1, val2):
-        first_part = 0
-        for vi in range(3):
-            first_part += (val1[vi] - val2[vi])**2
-        second_part = first_part / 3
-        third_part = np.sqrt(second_part)
-        return third_part
 
     def _calculate_distance_from_ideal_solutions(self, alt_i, crit_j, is_positive=True):
         ideal_solution_index = self.FPIS_indexes[crit_j]
@@ -336,49 +482,3 @@ class FuzzyTOPSIS(BaseTOPSIS):
             ideal_solution = self.weighted_norm_decision_matrix[ideal_solution_index][crit_j]
             dist = self._fuzzy_number_distance_calculation(criterion, ideal_solution)
         return dist
-
-    def _distance_from_FPIS_FNIS(self):
-        """
-        Sixth step in fuzzy TOPSIS, where the distances from each alternative to the
-        Fuzzy Positive Ideal Solution (FPIS) and Fuzzy Negative Ideal Solution (FNIS) are calculated.
-        """
-        self.fpis_distances = []
-        self.fpis_distances_per_criterion = []
-        self.fnis_distances = []
-        self.fnis_distances_per_criterion = []
-        for alt_i, alternative in enumerate(self.weighted_norm_decision_matrix):
-            alt_fpis_distances = []
-            alt_fnis_distances = []
-            for crit_j, criterion in enumerate(alternative):
-                fpis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=True)
-                fnis_dist = self._calculate_distance_from_ideal_solutions(alt_i, crit_j, is_positive=False)
-
-                alt_fpis_distances.append(fpis_dist)
-                alt_fnis_distances.append(fnis_dist)
-
-            self.fpis_distances_per_criterion.append(alt_fpis_distances)
-            self.fpis_distances.append(sum(alt_fpis_distances))
-            self.fnis_distances_per_criterion.append(alt_fnis_distances)
-            self.fnis_distances.append(sum(alt_fnis_distances))
-
-    def _calculate_closeness_coefficients(self):
-        """
-        Seventh step in fuzzy TOPSIS, where it is calculated the closeness coefficient for each alternative.
-        """
-        self.clonseness_coefficients = []
-        for alt_j in range(self.num_alternatives):
-            nominator = self.fnis_distances[alt_j]
-            denominator = self.fnis_distances[alt_j] + self.fpis_distances[alt_j]
-            close_coeff = nominator / denominator
-            self.clonseness_coefficients.append(close_coeff)
-
-    def get_alternatives_ranking_scores(self):
-        return self.clonseness_coefficients
-
-    def _rank_alternatives(self):
-        """
-        Eight and last step in fuzzy TOPSIS, in which final alternative ranks are calculated as crips values.
-        """
-
-        self.ranking_indexes = sorted(range(self.num_alternatives), key=lambda k: self.clonseness_coefficients[k], reverse=True)
-
