@@ -391,3 +391,45 @@ class TestFuzzyTOPSISWithChenInputs(TestCase):
         self.assertAlmostEqual(self.ranker.closeness_coefficients[2], expected_ccs[2], places=2)
         self.assertAlmostEqual(self.ranker.closeness_coefficients[0], expected_ccs[0], places=2)
 
+
+    def test_logically_sound_example_cost_criteria(self):
+
+        criteria_rank = {
+            'high_importance': (0.7, 0.9, 1),
+            'medium_high_importance': (0.5, 0.7, 0.9),
+            'medium_importance': (0.3, 0.5, 0.7),
+            'medium_low_importance': (0.1, 0.3, 0.5),
+            'low_importance': (0.1, 0.1, 0.3),
+        }
+        alternative_rating = {
+            'high_rating': (7, 9, 10),
+            'medium_high_rating': (5, 7, 9),
+            'medium_rating': (3, 5, 7),
+            'medium_low_rating': (1, 3, 5),
+            'low_rating': (1, 1, 3),
+        }
+
+
+        dm_single = {
+            'decision_matrix': [
+                [alternative_rating['medium_rating'], alternative_rating['medium_rating'], alternative_rating['low_rating']],
+                [alternative_rating['medium_rating'], alternative_rating['medium_rating'], alternative_rating['high_rating']],
+                [alternative_rating['high_rating'], alternative_rating['low_rating'], alternative_rating['medium_rating']],
+            ],
+            'criteria_weights': [
+                criteria_rank['medium_importance'], criteria_rank['low_importance'], criteria_rank['high_importance']
+            ]
+        }
+
+        criteria_benefit_indicator = [True, True, False] # crit1 and 2 are benefit, and crit 3 is cost
+        decision_matrix_list = [dm_single['decision_matrix']]
+        criteria_weights_list = [dm_single['criteria_weights']]
+        self.ranker = FuzzyTOPSIS(
+            criteria_benefit_indicator=criteria_benefit_indicator,
+            decision_matrix_list=decision_matrix_list,
+            criteria_weights_list=criteria_weights_list
+        )
+        ret = self.ranker.evaluate()
+
+        self.assertEqual(ret[0], 0)
+        self.assertListEqual(ret, [0, 2, 1])

@@ -5,7 +5,7 @@ from event_service_utils.logging.decorators import timer_logger
 from event_service_utils.services.event_driven import BaseEventDrivenCMDService
 from event_service_utils.tracing.jaeger import init_tracer
 
-from slr_worker_ranking.mcdm.ftopsis import FuzzyTOPSIS
+from slr_worker_ranking.mcdm.ftopsis import FuzzyTOPSIS, AltFuzzyTOPSIS
 from slr_worker_ranking.mcdm.crisptopsis import CrispTOPSIS
 
 from slr_worker_ranking.conf import (
@@ -54,6 +54,7 @@ class SLRWorkerRanking(BaseEventDrivenCMDService):
     def initialize_ranker(self):
         ranker_type_class_map = {
             'chen-ftopsis': FuzzyTOPSIS,
+            'alt-ftopsis': AltFuzzyTOPSIS,
             'crisp-topsis': CrispTOPSIS,
         }
         ranker_cls = ranker_type_class_map[self.ranker_type]

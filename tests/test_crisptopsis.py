@@ -49,3 +49,59 @@ class TestCrispTOPSIS(TestCase):
         expected_ccs = [0.3516287, 0.6483713]
         self.assertAlmostEqual(scores[0], expected_ccs[0], places=3)
         self.assertAlmostEqual(scores[1], expected_ccs[1], places=3)
+
+    def test_logically_sound_example_cost_criteria(self):
+        criteria_rank = {
+            'high_importance': 0.9,
+            'medium_high_importance': 0.7,
+            'medium_importance': 0.5,
+            'medium_low_importance': 0.3,
+            'low_importance': 0.1,
+        }
+        alternative_rating = {
+            'high_rating': 9,
+            'medium_high_rating': 7,
+            'medium_rating': 5,
+            'medium_low_rating': 3,
+            'low_rating': 1,
+        }
+        alternative_d_rating = {
+            'high_rating': 0.9,
+            'medium_high_rating': 0.7,
+            'medium_rating': 0.5,
+            'medium_low_rating': 0.3,
+            'low_rating': 0.1,
+        }
+        alternative_c_rating = {
+            'high_rating': 90,
+            'medium_high_rating': 70,
+            'medium_rating': 50,
+            'medium_low_rating': 30,
+            'low_rating': 10,
+        }
+
+
+        dm_single = {
+            'decision_matrix': [
+                [alternative_d_rating['medium_rating'], alternative_c_rating['medium_rating'], alternative_rating['low_rating']],
+                [alternative_d_rating['medium_rating'], alternative_c_rating['medium_rating'], alternative_rating['high_rating']],
+                [alternative_d_rating['high_rating'], alternative_c_rating['low_rating'], alternative_rating['medium_rating']],
+            ],
+            'criteria_weights': [
+                criteria_rank['medium_importance'], criteria_rank['low_importance'], criteria_rank['high_importance']
+            ]
+        }
+
+        criteria_benefit_indicator = [True, True, False] # crit1 and 2 are benefit, and crit 3 is cost
+        decision_matrix_list = [dm_single['decision_matrix']]
+        criteria_weights_list = [dm_single['criteria_weights']]
+        self.ranker = CrispTOPSIS(
+            criteria_benefit_indicator=criteria_benefit_indicator
+        )
+
+        self.ranker.add_decision_maker(**dm_single)
+        ret = self.ranker.evaluate()
+        expected_rank_index = [1, 0]
+
+        self.assertEqual(ret[0], 0)
+        self.assertListEqual(ret, [0, 2, 1])
